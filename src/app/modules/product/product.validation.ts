@@ -91,6 +91,7 @@ const productCreateShape = z.object({
             color:         z.string().optional(),
             colorHex:      z.string().optional(),
             size:          z.string().optional(),
+            description:   z.string().optional(),   // variant-specific description (was silently dropped)
             price:         z.number().min(0, 'Variant price required'),
             originalPrice: z.number().min(0).optional().nullable(),
             stock:         z.number().min(0).optional(),

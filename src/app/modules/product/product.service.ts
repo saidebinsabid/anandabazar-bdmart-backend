@@ -70,6 +70,16 @@ const ProductService = {
             : undefined;
         delete query.inStock;
 
+        // Merchandising flags: ?isFeatured / ?isOnSale / ?isNewProduct = true → the
+        // storefront's Featured / On-Sale / New sections filter by the admin toggles.
+        const flagConds: Record<string, unknown> = {};
+        (['isFeatured', 'isOnSale', 'isNewProduct'] as const).forEach((f) => {
+            if (query[f] === 'true' || query[f] === true) flagConds[f] = true;
+            delete query[f];
+        });
+        const flagFilter: Record<string, unknown> | undefined =
+            Object.keys(flagConds).length > 0 ? flagConds : undefined;
+
         // category: match products whose PRIMARY category OR sub-category equals the id.
         // A product stores its root in `category` and (optionally) its child in
         // `subCategory`; selecting either a root OR a sub-category in the filter must
@@ -89,6 +99,7 @@ const ProductService = {
             ratingFilter,
             stockFilter,
             categoryFilter,
+            flagFilter,
         ].filter(Boolean) as Record<string, unknown>[];
         const extraFilterMerge: Record<string, unknown> =
             extraFilters.length > 0 ? { $and: extraFilters } : {};
@@ -255,14 +266,26 @@ const ProductService = {
 
     // ── Update product ──────────────────────────────────────────────────
     async updateProduct(id: string, payload: any) {
-        // Remove discount from payload — it's auto-calculated in pre-save
+        // discount (base + per-variant) and variant labels are auto-derived in the
+        // pre('save') hook. Drop any client-sent discount so it can't override the
+        // calculation, then load → assign → save so those hooks actually run
+        // (findOneAndUpdate would BYPASS them, leaving stale discounts on edit).
         delete payload.discount;
-        const product = await Product.findOneAndUpdate(
-            { _id: id, isDeleted: false },
-            payload,
-            { new: true, runValidators: true }
-        ).populate('category', 'name slug');
+
+        const product = await Product.findOne({ _id: id, isDeleted: false });
         if (!product) throw new AppError(404, 'Product not found');
+
+        const prevCategory = String(product.category);
+        Object.assign(product, payload);
+        await product.save();
+
+        // Keep category product counts in sync when the category changes.
+        if (payload.category && String(payload.category) !== prevCategory) {
+            await Category.findByIdAndUpdate(prevCategory, { $inc: { productCount: -1 } });
+            await Category.findByIdAndUpdate(payload.category, { $inc: { productCount: 1 } });
+        }
+
+        await product.populate('category', 'name slug');
         return product;
     },
 
@@ -335,9 +358,17 @@ const ProductService = {
     // ── Update stock (no longer needed — stock field removed) ───────────
     // Kept for API compatibility; status can still be set to out-of-stock manually
 
-    // ── Featured products (top selling active products) ─────────────────
+    // ── Featured products ───────────────────────────────────────────────
+    // Prefer products the admin explicitly flagged as Featured; if none are
+    // flagged yet, gracefully fall back to top sellers so the section is never empty.
     async getFeaturedProducts(limit = 8) {
-        return await Product.find({ isDeleted: false, status: 'active' })
+        const base: Record<string, unknown> = { isDeleted: false, status: 'active', visibility: { $ne: 'hidden' } };
+        const flagged = await Product.find({ ...base, isFeatured: true })
+            .populate('category', 'name slug')
+            .sort({ totalSold: -1, createdAt: -1 })
+            .limit(limit);
+        if (flagged.length > 0) return flagged;
+        return await Product.find(base)
             .populate('category', 'name slug')
             .sort({ totalSold: -1 })
             .limit(limit);
