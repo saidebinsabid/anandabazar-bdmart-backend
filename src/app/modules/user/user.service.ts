@@ -194,10 +194,11 @@ const UserService = {
     // Get a user's wishlist publicly (read-only share). Exposes only product data.
     async getSharedWishlist(userId: string) {
         const user = await User.findById(userId)
-            .select('wishlist')
+            .select('wishlist firstName lastName')
             .populate({
                 path: 'wishlist',
-                select: 'name images price discountPrice stock averageRating totalReviews slug',
+                // Real Product field names (thumbnail/originalPrice/rating/reviewCount).
+                select: 'name slug thumbnail images price originalPrice discount stock rating reviewCount',
                 match: { isDeleted: false },
             });
         if (!user) throw new AppError(404, 'Wishlist not found');
