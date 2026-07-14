@@ -6,7 +6,9 @@ import CategoryService from './category.service';
 const CategoryController = {
     getAll: catchAsync(async (req: Request, res: Response) => {
         const parent = typeof req.query.parent === 'string' ? req.query.parent : undefined;
-        const categories = await CategoryService.getAllCategories(parent);
+        const menu = req.query.menu === 'true';
+        const home = req.query.home === 'true';
+        const categories = await CategoryService.getAllCategories(parent, { menu, home });
         sendResponse(res, { statusCode: 200, success: true, message: 'Categories fetched', data: categories });
     }),
 

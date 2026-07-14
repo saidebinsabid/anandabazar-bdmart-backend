@@ -19,10 +19,13 @@ const attachProductCounts = async (categories: any[]) => {
 };
 
 const CategoryService = {
-    async getAllCategories(parent?: string) {
+    async getAllCategories(parent?: string, opts: { menu?: boolean; home?: boolean } = {}) {
         const filter: any = { isDeleted: false, isActive: true };
         // Optional ?parent=<id> filter → return only that parent's sub-categories
         if (parent !== undefined) filter.parent = parent === 'null' ? null : parent;
+        // ?menu=true / ?home=true → respect the admin's per-category visibility toggles
+        if (opts.menu) filter.showInMenu = true;
+        if (opts.home) filter.showInHome = true;
         const categories = await Category.find(filter)
             .populate('parent', 'name slug')
             .sort({ level: 1, order: 1, name: 1 })
@@ -83,8 +86,21 @@ const CategoryService = {
     },
 
     async deleteCategory(id: string) {
-        const category = await Category.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
-        if (!category) throw new AppError(404, 'Category not found');
+        const category = await Category.findById(id);
+        if (!category || category.isDeleted) throw new AppError(404, 'Category not found');
+
+        // Referential integrity — never orphan sub-categories or products.
+        const subCount = await Category.countDocuments({ parent: id, isDeleted: false });
+        if (subCount > 0) {
+            throw new AppError(400, `Cannot delete: this category has ${subCount} sub-categor${subCount === 1 ? 'y' : 'ies'}. Delete or move them first.`);
+        }
+        const productCount = await Product.countDocuments({ category: id, isDeleted: false });
+        if (productCount > 0) {
+            throw new AppError(400, `Cannot delete: ${productCount} product${productCount === 1 ? '' : 's'} still belong to this category. Move or remove them first.`);
+        }
+
+        category.isDeleted = true;
+        await category.save();
         return category;
     },
 };
