@@ -23,10 +23,21 @@ const OrderService = {
     },
 
     async getMyOrders(userId: string, query: Record<string, unknown>) {
+        // The client sends `search` for order-number lookups, but QueryBuilder.search()
+        // reads `searchTerm` — normalise so the "Search by order number" box works.
+        const normalizedQuery = { ...query };
+        if (normalizedQuery.search && !normalizedQuery.searchTerm) {
+            normalizedQuery.searchTerm = normalizedQuery.search;
+        }
+
         const orderQuery = new QueryBuilder(
             Order.find({ user: userId }).populate('items.product', 'name thumbnail slug'),
-            query
-        ).sort().paginate();
+            normalizedQuery
+        )
+            .search(['orderId'])   // enable "My Orders" search by human order id (ABM-XXXX)
+            .filter()              // enable the status tabs (?status=shipped, etc.)
+            .sort()
+            .paginate();
 
         const orders = await orderQuery.modelQuery;
         const meta = await orderQuery.countTotal();
