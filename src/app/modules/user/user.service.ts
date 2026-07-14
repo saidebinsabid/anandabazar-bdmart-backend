@@ -167,7 +167,9 @@ const UserService = {
     async getWishlist(userId: string) {
         const user = await User.findById(userId).populate({
             path: 'wishlist',
-            select: 'name images price discountPrice stock averageRating totalReviews slug',
+            // Use the real Product field names (thumbnail/originalPrice/rating/reviewCount)
+            // so the wishlist page can render image, price + rating correctly.
+            select: 'name slug thumbnail images price originalPrice discount stock rating reviewCount',
             match: { isDeleted: false },
         });
         if (!user) throw new AppError(404, 'User not found');

@@ -381,6 +381,7 @@ const ProductService = {
             category: categoryId,
             isDeleted: false,
             status: 'active',
+            visibility: { $ne: 'hidden' }, // never leak hidden products into "related"
         })
             .populate('category', 'name slug')
             .sort({ rating: -1 })
