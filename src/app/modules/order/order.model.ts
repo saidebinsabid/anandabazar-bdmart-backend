@@ -43,7 +43,8 @@ const orderSchema = new Schema(
         shippingFreeReason: { type: String, default: '' }, // '' | product | coupon | threshold | quantity
         discount: { type: Number, default: 0 },
         total: { type: Number, required: true },
-        couponCode: { type: String, default: '' },
+        couponCode: { type: String, default: '' },        // primary/first applied coupon (kept for display + back-compat)
+        couponCodes: { type: [String], default: [] },     // all applied coupons when several are stacked on one order
 
         // Status
         status: {

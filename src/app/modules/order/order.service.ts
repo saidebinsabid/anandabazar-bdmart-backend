@@ -67,7 +67,7 @@ const OrderService = {
     },
 
     async createOrder(userId: string, payload: any) {
-        const { items, shippingAddress, paymentMethod, paymentDetails, couponCode, note } = payload;
+        const { items, shippingAddress, paymentMethod, paymentDetails, couponCode, couponCodes, note } = payload;
 
         // Guard: an order must contain at least one item (defense-in-depth —
         // the guest-checkout route also validates, but any caller is protected here).
@@ -117,32 +117,49 @@ const OrderService = {
             stagedItems.push({ product });
         }
 
-        // Apply coupon (percentage / fixed / free_shipping)
+        // ── Apply coupons (percentage / fixed / free_shipping) — supports stacking ──
+        // Accepts either couponCodes[] (multiple, stacked) or a single couponCode
+        // (legacy). Each coupon is independently validated (active, not expired,
+        // usage limit, min-order, scope) and its discount summed; at most one
+        // free-shipping coupon takes effect; the total is capped at the subtotal.
         let discount = 0;
         let couponFreeShipping = false;
-        let appliedCoupon: any = null;
-        if (couponCode) {
-            const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
-            const usable = coupon && coupon.expiresAt > new Date()
-                && (!coupon.usageLimit || coupon.usedCount < coupon.usageLimit)
-                && subtotal >= (coupon.minOrderAmount || 0);
-            if (usable) {
-                // Scope-aware: only discount the items the coupon actually covers.
-                const couponLineItems = orderItems.map((oi: any, idx: number) => ({
-                    productId: String(oi.product),
-                    categoryId: stagedItems[idx]?.product?.category ? String(stagedItems[idx].product.category) : null,
-                    lineTotal: oi.total,
-                }));
+        const appliedCoupons: any[] = [];
+        const appliedCodes: string[] = [];
+
+        const rawCodes: string[] = Array.isArray(couponCodes) && couponCodes.length
+            ? couponCodes
+            : (couponCode ? [couponCode] : []);
+        const codes = Array.from(
+            new Set(rawCodes.map((c: string) => String(c || '').toUpperCase().trim()).filter(Boolean)),
+        ).slice(0, 5); // hard cap: never stack more than 5 on one order
+
+        if (codes.length > 0) {
+            // Scope-aware line items (built once, reused for every coupon).
+            const couponLineItems = orderItems.map((oi: any, idx: number) => ({
+                productId: String(oi.product),
+                categoryId: stagedItems[idx]?.product?.category ? String(stagedItems[idx].product.category) : null,
+                lineTotal: oi.total,
+            }));
+
+            for (const code of codes) {
+                const coupon = await Coupon.findOne({ code, isActive: true });
+                const usable = coupon && coupon.expiresAt > new Date()
+                    && (!coupon.usageLimit || coupon.usedCount < coupon.usageLimit)
+                    && subtotal >= (coupon.minOrderAmount || 0);
+                if (!usable || !coupon) continue;
+
                 const eligibleAmount = getEligibleAmount(coupon, couponLineItems);
-                // Apply only if the coupon covers at least one item in this order.
-                if (coupon.applicableTo === 'all' || eligibleAmount > 0) {
-                    appliedCoupon = coupon;
-                    if (coupon.discountType === 'free_shipping') {
-                        couponFreeShipping = true;
-                    } else {
-                        discount = computeCouponDiscount(coupon, eligibleAmount);
-                    }
+                // Skip a scoped coupon that covers none of this order's items.
+                if (coupon.applicableTo !== 'all' && eligibleAmount <= 0) continue;
+
+                if (coupon.discountType === 'free_shipping') {
+                    couponFreeShipping = true;
+                } else {
+                    discount += computeCouponDiscount(coupon, eligibleAmount);
                 }
+                appliedCoupons.push(coupon);
+                appliedCodes.push(coupon.code);
             }
         }
 
@@ -170,7 +187,8 @@ const OrderService = {
             shippingFreeReason: freeReason || '',
             discount,
             total,
-            couponCode: couponCode || '',
+            couponCode: appliedCodes[0] || '',
+            couponCodes: appliedCodes,
             paymentMethod,
             paymentDetails: paymentDetails || {},
             transactionId: paymentDetails?.transactionId || '',
@@ -178,9 +196,12 @@ const OrderService = {
             timeline: [{ status: 'pending', note: 'Order placed successfully' }],
         });
 
-        // Count the coupon usage (so usageLimit is enforced).
-        if (appliedCoupon) {
-            await Coupon.updateOne({ _id: appliedCoupon._id }, { $inc: { usedCount: 1 } });
+        // Count usage for every applied coupon (so each usageLimit is enforced).
+        if (appliedCoupons.length > 0) {
+            await Coupon.updateMany(
+                { _id: { $in: appliedCoupons.map((c) => c._id) } },
+                { $inc: { usedCount: 1 } },
+            );
         }
 
         // Update stock and product sold count

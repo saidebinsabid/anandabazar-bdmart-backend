@@ -28,6 +28,7 @@ export const createOrderValidation = z.object({
         paymentMethod: z.enum(['cod', 'bkash', 'rocket', 'nagad', 'sslcommerz']).default('bkash'),
         paymentDetails: paymentDetailsValidation,
         couponCode: z.string().optional(),
+        couponCodes: z.array(z.string()).optional(), // multiple stacked coupons
         note: z.string().optional(),
     }),
 });
