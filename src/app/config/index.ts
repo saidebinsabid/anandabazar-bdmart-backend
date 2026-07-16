@@ -97,6 +97,32 @@ export default {
         client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
     },
 
+    // ── AI Vision (Image Search) ──────────────────────────────────────────
+    // Image search works out-of-the-box with a built-in smart colour+keyword
+    // matcher (no key needed). Drop in ONE provider's API key below and image
+    // search automatically upgrades to real AI object/label detection — no code
+    // change (enable-on-key-drop, same pattern as the payment gateways).
+    // Whichever key is present activates that provider; AI_VISION_PROVIDER can
+    // force a specific one when several keys are set.
+    vision: {
+        provider: process.env.AI_VISION_PROVIDER || '', // '' = auto-detect | openai | google | clarifai | huggingface
+        openai: {
+            api_key: process.env.OPENAI_API_KEY || '',
+            model: process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini',
+        },
+        google: {
+            api_key: process.env.GOOGLE_VISION_API_KEY || '',
+        },
+        clarifai: {
+            pat: process.env.CLARIFAI_PAT || '',
+            model_id: process.env.CLARIFAI_MODEL_ID || 'general-image-recognition',
+        },
+        huggingface: {
+            api_key: process.env.HUGGINGFACE_API_KEY || '',
+            model: process.env.HUGGINGFACE_VISION_MODEL || 'google/vit-base-patch16-224',
+        },
+    },
+
     // Steadfast Courier (Packzy) — delivery booking, status sync, COD.
     steadfast: {
         api_key: process.env.STEADFAST_API_KEY || '',

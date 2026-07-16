@@ -30,6 +30,7 @@ import { NotificationRoutes } from './app/modules/notification/notification.rout
 import { ActivityLogRoutes } from './app/modules/activityLog/activityLog.routes';
 import { NewsletterRoutes } from './app/modules/newsletter/newsletter.routes';
 import { CourierRoutes } from './app/modules/courier/courier.routes';
+import { ImageSearchRoutes } from './app/modules/imageSearch/imageSearch.routes';
 
 const app: Application = express();
 
@@ -102,6 +103,7 @@ app.use('/api/notifications', NotificationRoutes);
 app.use('/api/activity-logs', ActivityLogRoutes);
 app.use('/api/newsletter', NewsletterRoutes);
 app.use('/api/courier', CourierRoutes);
+app.use('/api/image-search', ImageSearchRoutes);
 
 // ── Error Handlers ────────────────────────────────────────────────
 app.use(notFoundHandler);
