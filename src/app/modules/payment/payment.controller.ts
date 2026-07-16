@@ -8,6 +8,19 @@ import { PaymentService } from './payment.service';
 const frontend = (): string => config.payment.frontend_url.replace(/\/+$/, '');
 
 const PaymentController = {
+    // ── PUBLIC: GET /payments/methods ────────────────────────────────
+    // What checkout may offer and how each method collects money
+    // (gateway / manual send-money / cash on delivery).
+    methods: catchAsync(async (_req: Request, res: Response) => {
+        const data = await PaymentService.getAvailableMethods();
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: 'Payment methods fetched',
+            data,
+        });
+    }),
+
     // ── PUBLIC: POST /payments/init ──────────────────────────────────
     init: catchAsync(async (req: Request, res: Response) => {
         const { orderId, method } = req.body;

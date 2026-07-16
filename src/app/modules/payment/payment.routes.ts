@@ -15,6 +15,9 @@ const router = express.Router();
 // MUST be declared BEFORE the admin guard below.
 // ─────────────────────────────────────────────────────────────────────
 
+// Which methods checkout may offer, and how each one collects money.
+router.get('/methods', PaymentController.methods);
+
 // Start a payment for an existing order → { redirectUrl, transactionId }
 router.post('/init', validateRequest(initPaymentValidation), PaymentController.init);
 

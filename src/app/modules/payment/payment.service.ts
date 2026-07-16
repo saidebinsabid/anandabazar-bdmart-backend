@@ -572,6 +572,69 @@ const retryPayment = async (
     return initPayment({ orderId: String(old.order), method: old.method });
 };
 
+/**
+ * What the checkout is allowed to offer, and HOW each method takes money.
+ *
+ * This is the single source of truth for the old contradiction where bKash both
+ * asked for a manual "Send Money" receipt AND redirected to a gateway. A method
+ * is now exactly one of:
+ *
+ *   'gateway' — hand off to the provider. live:true once its keys are in .env;
+ *               live:false means the sandbox/demo screen (preview of the real
+ *               experience, clearly labelled — no real money moves).
+ *   'manual'  — no gateway keys, but the shop published a wallet number: the
+ *               customer sends money and submits the receipt details.
+ *   'cod'     — pay on delivery.
+ *
+ * A wallet with neither keys nor a published number cannot take money at all,
+ * so it is not offered.
+ */
+const WALLETS: GatewayMethod[] = ['bkash', 'nagad', 'rocket'];
+
+const getAvailableMethods = async () => {
+    const { SiteContent } = require('../siteContent/siteContent.model');
+    const site = await SiteContent.findOne({ _key: 'main' }).select('payment').lean();
+    const pay: any = site?.payment || {};
+
+    const methods: any[] = [];
+
+    for (const id of WALLETS) {
+        const wallet = pay[id] || {};
+        if (wallet.active === false) continue;
+
+        const provider = gatewayProviders[id];
+        if (provider?.isConfigured()) {
+            methods.push({ id, label: provider.label, mode: 'gateway', live: true });
+        } else if (wallet.number) {
+            methods.push({
+                id,
+                label: provider?.label || id,
+                mode: 'manual',
+                live: false,
+                number: wallet.number,
+                accountType: wallet.accountType || 'Personal',
+            });
+        }
+        // else: no keys and no number → it cannot accept payment, so don't offer it.
+    }
+
+    // Cards/net-banking have no manual equivalent, so this is always a gateway.
+    // Without keys it still resolves to the demo screen, which is how the
+    // gateway experience can be shown before a merchant account exists.
+    methods.push({
+        id: 'sslcommerz',
+        label: gatewayProviders.sslcommerz.label,
+        mode: 'gateway',
+        live: isSslcommerzConfigured(),
+    });
+
+    if (pay?.cod?.active !== false) {
+        methods.push({ id: 'cod', label: 'Cash on Delivery', mode: 'cod', live: true });
+    }
+
+    return { methods, instructions: pay.instructions || '' };
+};
+
 export const PaymentService = {
     initPayment,
     handleSslcommerzCallback,
@@ -580,6 +643,7 @@ export const PaymentService = {
     verifyPayment,
     getMyTransactions,
     retryPayment,
+    getAvailableMethods,
     // exposed for potential reuse/testing
     isSslcommerzConfigured,
     isBkashConfigured,
