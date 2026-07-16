@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import config from '../../config';
 import AppError from '../../utils/AppError';
 import { Order } from '../order/order.model';
+import { notifyOrderPayment } from '../order/order.service';
 import { emitFinanceUpdate } from '../../utils/socket';
 import { Transaction } from './payment.model';
 import { ITransaction, PaymentMethod, GatewayMethod, TransactionStatus } from './payment.interface';
@@ -108,6 +109,8 @@ const applyOrderOutcome = async (
     await order.save();
     // Money moved → push a live refresh to admin dashboards.
     if (outcome === 'paid') emitFinanceUpdate('payment_received');
+    // ...and tell the customer, exactly as the manual admin path does.
+    notifyOrderPayment(order, outcome);
 };
 
 // ── SSLCommerz: create a checkout session ────────────────────────────

@@ -44,6 +44,26 @@ const NotificationService = {
         return results;
     },
 
+    // Send the same notification to every admin / superadmin. Fire-and-forget by
+    // design: a notification failure must never break the action that triggered
+    // it (an order, a review, a contact message), so this never throws.
+    async notifyAdmins(input: Omit<NotifyInput, 'user'>) {
+        try {
+            // Required lazily to avoid a circular import at module load time.
+            const { User } = require('../user/user.model');
+            const admins = await User.find({
+                role: { $in: ['admin', 'superadmin'] },
+                isDeleted: { $ne: true },
+            }).select('_id');
+            for (const admin of admins) {
+                await this.notify({ ...input, user: admin._id });
+            }
+            return admins.length;
+        } catch {
+            return 0;
+        }
+    },
+
     // Paginated, newest-first list of a user's notifications.
     async getMy(userId: string, query: Record<string, unknown>) {
         const page = Number(query.page) || 1;

@@ -30,6 +30,24 @@ const ReviewService = {
         const exists = await Review.findOne({ product: payload.product, user: userId });
         if (exists) throw new AppError(400, 'You have already reviewed this product');
         const review = await Review.create({ ...payload, user: userId });
+
+        // Let the admins know there is something new to moderate. Fire-and-forget.
+        try {
+            const { NotificationService } = require('../notification/notification.service');
+            const { Product } = require('../product/product.model');
+            Product.findById(payload.product).select('name').then((p: any) => {
+                NotificationService.notifyAdmins({
+                    type: 'new_review',
+                    title: 'New product review',
+                    message: `${review.rating}★ review left on "${p?.name || 'a product'}".`,
+                    link: '/dashboard/admin/reviews',
+                    meta: { reviewId: review._id.toString(), product: String(payload.product), rating: review.rating },
+                }).catch(() => {});
+            }).catch(() => {});
+        } catch {
+            // never block the review from being saved
+        }
+
         return review;
     },
 

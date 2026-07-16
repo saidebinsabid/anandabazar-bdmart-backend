@@ -10,6 +10,46 @@ import { notifyOrderToWhatsApp } from '../../utils/whatsappNotify';
 import { emitFinanceUpdate } from '../../utils/socket';
 import { computeShippingCost } from '../shipping/shipping.service';
 
+/**
+ * Tell the customer their payment status changed. Shared by the admin's manual
+ * "mark as paid" and by the payment-gateway callback, so money moving through
+ * either path notifies identically. Fire-and-forget — a notification failure
+ * must never break a payment.
+ */
+export const notifyOrderPayment = (order: any, paymentStatus: string): void => {
+    const COPY: Record<string, { title: string; message: (ref: string, total: number) => string }> = {
+        paid: {
+            title: 'Payment received',
+            message: (ref, total) => `We have received your ৳${total} payment for order ${ref}. Thank you!`,
+        },
+        failed: {
+            title: 'Payment failed',
+            message: (ref) => `Your payment for order ${ref} did not go through. You can retry it from My Orders.`,
+        },
+        refunded: {
+            title: 'Payment refunded',
+            message: (ref, total) => `৳${total} for order ${ref} has been refunded.`,
+        },
+    };
+    const copy = COPY[paymentStatus];
+    if (!copy || !order?.user) return;
+
+    try {
+        const { NotificationService } = require('../notification/notification.service');
+        const orderIdStr = order._id.toString();
+        NotificationService.notify({
+            user: order.user,
+            type: 'payment_' + paymentStatus,
+            title: copy.title,
+            message: copy.message(order.orderId || orderIdStr, order.total || 0),
+            link: '/dashboard/user/orders/' + orderIdStr,
+            meta: { orderId: orderIdStr, paymentStatus, total: order.total },
+        }).catch(() => {});
+    } catch {
+        // never block the payment flow on a notification failure
+    }
+};
+
 const OrderService = {
     async getAllOrders(query: Record<string, unknown>) {
         // The admin list sends `search` for order-number lookups, but QueryBuilder.search()
@@ -255,17 +295,13 @@ const OrderService = {
                 });
 
                 // 2) Every admin / superadmin
-                const admins = await User.find({ role: { $in: ['admin', 'superadmin'] } }).select('_id');
-                for (const admin of admins) {
-                    await NotificationService.notify({
-                        user: admin._id,
-                        type: 'new_order',
-                        title: 'New order placed',
-                        message: `A new order ${order.orderId || orderIdStr} was placed (৳${total}).`,
-                        link: '/dashboard/admin/orders/' + orderIdStr,
-                        meta: { orderId: orderIdStr, total },
-                    });
-                }
+                await NotificationService.notifyAdmins({
+                    type: 'new_order',
+                    title: 'New order placed',
+                    message: `A new order ${order.orderId || orderIdStr} was placed (৳${total}).`,
+                    link: '/dashboard/admin/orders/' + orderIdStr,
+                    meta: { orderId: orderIdStr, total },
+                });
             };
 
             fanOut().catch(() => {});
@@ -394,6 +430,23 @@ const OrderService = {
             await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
         }
 
+        // Tell the admins straight away — otherwise they keep packing an order
+        // the customer has already cancelled. Fire-and-forget.
+        try {
+            const { NotificationService } = require('../notification/notification.service');
+            const orderIdStr = order._id.toString();
+            NotificationService.notifyAdmins({
+                type: 'order_cancelled',
+                title: 'Order cancelled by customer',
+                message: `Order ${order.orderId || orderIdStr} was cancelled by the customer (৳${order.total}).`,
+                link: '/dashboard/admin/orders/' + orderIdStr,
+                meta: { orderId: orderIdStr, total: order.total },
+            }).catch(() => {});
+        } catch {
+            // never block the cancellation
+        }
+        emitFinanceUpdate('order_cancelled');
+
         return order;
     },
 
@@ -408,6 +461,9 @@ const OrderService = {
         order.timeline.push({ status: `payment_${paymentStatus}`, note: `Payment marked as ${paymentStatus}`, createdAt: new Date() } as any);
         await order.save();
         emitFinanceUpdate('payment_status:' + paymentStatus);
+
+        // Tell the customer — their money moved, they should hear about it.
+        notifyOrderPayment(order, paymentStatus);
         return order;
     },
 

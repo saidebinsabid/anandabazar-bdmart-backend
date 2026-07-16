@@ -17,6 +17,20 @@ const InquiryService = {
             size: data.size || '',
         }).catch(() => {}); // never block inquiry flow
 
+        // ...and the in-app bell, so it lands live even when WhatsApp isn't set up.
+        try {
+            const { NotificationService } = require('../notification/notification.service');
+            NotificationService.notifyAdmins({
+                type: 'new_inquiry',
+                title: 'New customer inquiry',
+                message: `${data.name || 'A customer'} asked about "${product?.name || 'a product'}".`,
+                link: '/dashboard/admin/inquiries',
+                meta: { inquiryId: inquiry._id.toString(), product: String(data.product || '') },
+            }).catch(() => {});
+        } catch {
+            // never block the inquiry flow
+        }
+
         return inquiry;
     },
 
