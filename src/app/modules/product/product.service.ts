@@ -310,7 +310,23 @@ const ProductService = {
 
     // ── Bulk delete ─────────────────────────────────────────────────────
     async bulkDelete(ids: string[]) {
-        const result = await Product.updateMany({ _id: { $in: ids } }, { isDeleted: true });
+        // Read the categories BEFORE the delete so each category's productCount can be
+        // corrected — a bare updateMany() leaves the counts drifting upward forever
+        // (single delete already decrements; bulk delete used to skip it).
+        const doomed = await Product.find({ _id: { $in: ids }, isDeleted: false }).select('category');
+        const result = await Product.updateMany({ _id: { $in: ids }, isDeleted: false }, { isDeleted: true });
+
+        const perCategory = new Map<string, number>();
+        doomed.forEach((p: any) => {
+            const key = String(p.category);
+            perCategory.set(key, (perCategory.get(key) || 0) + 1);
+        });
+        await Promise.all(
+            Array.from(perCategory.entries()).map(([categoryId, n]) =>
+                Category.findByIdAndUpdate(categoryId, { $inc: { productCount: -n } })
+            )
+        );
+
         return result;
     },
 
