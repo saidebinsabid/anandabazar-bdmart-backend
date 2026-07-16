@@ -16,13 +16,15 @@ const SiteContentService = {
                     { text: '💳 Extra 10% Cashback with bKash Payment', emoji: '💳', active: true, order: 5 },
                 ],
                 contact: {
-                    phone: '+8801688500771',
-                    phones: ['+8801688500771', '+8801931277113'],
-                    whatsapp: '01688500771',
+                    phone: '01711870439',
+                    phones: ['01711870439'],
+                    // Not set yet — the WhatsApp card, footer live-chat link and
+                    // floating button stay hidden until a number is added.
+                    whatsapp: '',
                     email: 'anandabazarbdmart@gmail.com',
                     emails: ['anandabazarbdmart@gmail.com'],
-                    address: '39/C, Uttar Pirerbug, Kamal Soroni Rd, Mirpur-2, Dhaka-1216',
-                    corporateOffice: '39/C, Uttar Pirerbug, Kamal Soroni Rd, Mirpur-2, Dhaka-1216',
+                    address: 'Alor Dishari, 6/6, Shantibagh, Prashanti Hospital Lane, Dhaka-1217, Bangladesh',
+                    corporateOffice: 'Alor Dishari, 6/6, Shantibagh, Prashanti Hospital Lane, Dhaka-1217, Bangladesh',
                     website: 'anandabazarbdmart.com',
                     hours: [
                         { day: 'Sunday – Thursday', time: '9:00 AM – 6:00 PM' },
@@ -31,7 +33,6 @@ const SiteContentService = {
                     ],
                     tips: [
                         'Have your order ID ready for faster support',
-                        'WhatsApp is the fastest way to reach us',
                         'Attach screenshots for product issues',
                     ],
                     socials: [
@@ -42,8 +43,8 @@ const SiteContentService = {
                     subjects: ['Order Issue', 'Product Inquiry', 'Return / Refund', 'Delivery Problem', 'Payment Issue', 'Other'],
                 },
                 floating: {
-                    phone: '+8801688500771',
-                    whatsapp: '01688500771',
+                    phone: '01711870439',
+                    whatsapp: '',
                     messenger: 'YOUR_PAGE_USERNAME',
                     showPhone: true,
                     showWhatsapp: true,
@@ -95,7 +96,7 @@ const SiteContentService = {
                             },
                             {
                                 slug: 'refund', title: 'Refund Policy', active: true, lastUpdated: new Date(),
-                                content: `<h2>1. Overview</h2><p>At Anandabazar BDMart, customer satisfaction is our top priority. This Refund Policy outlines the terms under which you may request a return, exchange, or refund for products purchased through our platform.</p><h2>2. Eligibility for Returns</h2><p>You may request a return or exchange under the following conditions:</p><ul><li>The product is damaged, defective, or broken upon arrival.</li><li>The product received is significantly different from what was described or ordered.</li><li>The product is missing parts or accessories listed in the description.</li><li>The return request is made within <strong>7 days</strong> of delivery.</li></ul><p>Products that have been used, altered, washed, or damaged by the customer after delivery are <strong>not eligible</strong> for returns.</p><h2>3. Non-Returnable Items</h2><ul><li>Perishable goods (food, flowers, etc.)</li><li>Personal care and hygiene products (opened)</li><li>Customized or personalized items</li><li>Downloadable software or digital products</li><li>Undergarments and intimate apparel</li><li>Items marked as "Final Sale" or "Non-Returnable"</li></ul><h2>4. How to Request a Return</h2><ul><li><strong>Step 1:</strong> Contact our support team at <strong>anandabazarbdmart@gmail.com</strong> or via WhatsApp within 7 days of receiving your order.</li><li><strong>Step 2:</strong> Provide your Order ID, product details, and clear photos/videos showing the issue.</li><li><strong>Step 3:</strong> Our team will review and respond within 24-48 hours.</li><li><strong>Step 4:</strong> If approved, you will receive return shipping instructions.</li><li><strong>Step 5:</strong> Once we receive and inspect the item, your refund or replacement will be processed.</li></ul><h2>5. Refund Processing</h2><ul><li><strong>Refund Method:</strong> Refunds are issued to the original payment method.</li><li><strong>Processing Time:</strong> Refunds are typically processed within <strong>5-10 business days</strong> after receiving the returned item.</li><li><strong>Partial Refunds:</strong> May be issued if the product shows signs of use not caused during shipping.</li></ul><h2>6. Return Shipping Costs</h2><ul><li>If the return is due to our error (wrong item, defective), <strong>Anandabazar BDMart covers return shipping costs</strong>.</li><li>If the return is due to customer preference (change of mind), <strong>the customer pays return shipping</strong>.</li></ul><h2>7. Exchanges</h2><p>For defective or wrong items, we will send a replacement at no additional cost, subject to availability. If the product is unavailable, you will receive a full refund.</p><h2>8. International Orders</h2><p>For international returns, shipping costs and customs fees are the buyer's responsibility unless caused by our error. International refunds may take longer due to cross-border processing.</p><h2>9. Cancellation Before Shipping</h2><p>Orders cancelled before shipping receive a full refund within 3-5 business days. For "Buy and Ship for Me" orders already purchased, a cancellation fee of up to 15% may apply.</p><h2>10. Contact Us</h2><p>For refund questions or assistance:</p><ul><li><strong>Email:</strong> anandabazarbdmart@gmail.com</li><li><strong>Phone:</strong> +8801688500771</li></ul><p>Our support team is available Sunday–Thursday, 9:00 AM – 6:00 PM (BST).</p>`,
+                                content: `<h2>1. Overview</h2><p>At Anandabazar BDMart, customer satisfaction is our top priority. This Refund Policy outlines the terms under which you may request a return, exchange, or refund for products purchased through our platform.</p><h2>2. Eligibility for Returns</h2><p>You may request a return or exchange under the following conditions:</p><ul><li>The product is damaged, defective, or broken upon arrival.</li><li>The product received is significantly different from what was described or ordered.</li><li>The product is missing parts or accessories listed in the description.</li><li>The return request is made within <strong>7 days</strong> of delivery.</li></ul><p>Products that have been used, altered, washed, or damaged by the customer after delivery are <strong>not eligible</strong> for returns.</p><h2>3. Non-Returnable Items</h2><ul><li>Perishable goods (food, flowers, etc.)</li><li>Personal care and hygiene products (opened)</li><li>Customized or personalized items</li><li>Downloadable software or digital products</li><li>Undergarments and intimate apparel</li><li>Items marked as "Final Sale" or "Non-Returnable"</li></ul><h2>4. How to Request a Return</h2><ul><li><strong>Step 1:</strong> Contact our support team at <strong>anandabazarbdmart@gmail.com</strong> or via WhatsApp within 7 days of receiving your order.</li><li><strong>Step 2:</strong> Provide your Order ID, product details, and clear photos/videos showing the issue.</li><li><strong>Step 3:</strong> Our team will review and respond within 24-48 hours.</li><li><strong>Step 4:</strong> If approved, you will receive return shipping instructions.</li><li><strong>Step 5:</strong> Once we receive and inspect the item, your refund or replacement will be processed.</li></ul><h2>5. Refund Processing</h2><ul><li><strong>Refund Method:</strong> Refunds are issued to the original payment method.</li><li><strong>Processing Time:</strong> Refunds are typically processed within <strong>5-10 business days</strong> after receiving the returned item.</li><li><strong>Partial Refunds:</strong> May be issued if the product shows signs of use not caused during shipping.</li></ul><h2>6. Return Shipping Costs</h2><ul><li>If the return is due to our error (wrong item, defective), <strong>Anandabazar BDMart covers return shipping costs</strong>.</li><li>If the return is due to customer preference (change of mind), <strong>the customer pays return shipping</strong>.</li></ul><h2>7. Exchanges</h2><p>For defective or wrong items, we will send a replacement at no additional cost, subject to availability. If the product is unavailable, you will receive a full refund.</p><h2>8. International Orders</h2><p>For international returns, shipping costs and customs fees are the buyer's responsibility unless caused by our error. International refunds may take longer due to cross-border processing.</p><h2>9. Cancellation Before Shipping</h2><p>Orders cancelled before shipping receive a full refund within 3-5 business days. For "Buy and Ship for Me" orders already purchased, a cancellation fee of up to 15% may apply.</p><h2>10. Contact Us</h2><p>For refund questions or assistance:</p><ul><li><strong>Email:</strong> anandabazarbdmart@gmail.com</li><li><strong>Phone:</strong> 01711870439</li></ul><p>Our support team is available Sunday–Thursday, 9:00 AM – 6:00 PM (BST).</p>`,
                             },
                         ],
                     },
@@ -104,52 +105,12 @@ const SiteContentService = {
             );
         }
 
-        // Auto-migrate: ensure default Anandabazar BDMart contact phones/emails/website are populated
-        const c: any = content.get('contact') || {};
-        const needsContactMigrate =
-            !Array.isArray(c.phones) || c.phones.length === 0 ||
-            !Array.isArray(c.emails) || c.emails.length === 0 ||
-            !c.website;
-        if (needsContactMigrate) {
-            const mergedPhones = Array.from(new Set([
-                ...(Array.isArray(c.phones) ? c.phones : []),
-                '+8801688500771', '+8801931277113',
-            ].filter(Boolean)));
-            const mergedEmails = Array.from(new Set([
-                ...(Array.isArray(c.emails) ? c.emails : []),
-                c.email || 'anandabazarbdmart@gmail.com',
-            ].filter(Boolean)));
-            content = await SiteContent.findOneAndUpdate(
-                { _key: 'main' },
-                {
-                    $set: {
-                        'contact.phones': mergedPhones,
-                        'contact.emails': mergedEmails,
-                        'contact.website': c.website || 'anandabazarbdmart.com',
-                    },
-                },
-                { new: true }
-            );
-        }
-
-        // Auto-migrate: ensure the Anandabazar BDMart WhatsApp number is set
-        // everywhere (contact card, footer live-chat, floating widget).
-        const DEFAULT_WHATSAPP = '01688500771';
-        const waContact: any = content.get('contact') || {};
-        const waFloating: any = content.get('floating') || {};
-        if (!waContact.whatsapp || !waFloating.whatsapp) {
-            content = await SiteContent.findOneAndUpdate(
-                { _key: 'main' },
-                {
-                    $set: {
-                        'contact.whatsapp': waContact.whatsapp || DEFAULT_WHATSAPP,
-                        'floating.whatsapp': waFloating.whatsapp || DEFAULT_WHATSAPP,
-                        'floating.showWhatsapp': true,
-                    },
-                },
-                { new: true }
-            );
-        }
+        // NOTE: there used to be two "auto-migrate" blocks here that back-filled
+        // hardcoded phone/email/website/WhatsApp values on every read. They fought
+        // the admin: clearing a number in Settings silently resurrected the old one
+        // on the next request. Seeding belongs in the defaults above (used only when
+        // the document is first created) — an empty field is a valid choice and must
+        // be respected.
 
         // Auto-migrate: ensure payment object exists
         if (!content.get('payment')) {
