@@ -75,6 +75,7 @@ const orderSchema = new Schema(
         courierBookedAt: { type: Date },
 
         note: { type: String, default: '' },
+        adminNote: { type: String, default: '' }, // internal note shown/editable on the admin order detail
         timeline: { type: [timelineSchema], default: [] },
     },
     { timestamps: true, toJSON: { virtuals: true } }

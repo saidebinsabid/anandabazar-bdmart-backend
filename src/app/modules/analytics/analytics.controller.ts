@@ -76,17 +76,22 @@ const AnalyticsController = {
                     orders: { $sum: 1 },
                 },
             },
-            { $sort: { '_id.year': 1, '_id.month': 1 } },
+            // Take the 12 MOST RECENT months (sort desc + limit), then re-order chronologically
+            // below. Sorting ascending before $limit would keep the 12 OLDEST months and drop
+            // the current period once the store has >12 months of paid orders.
+            { $sort: { '_id.year': -1, '_id.month': -1 } },
             { $limit: 12 },
         ]);
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const data = monthlyRevenue.map((item) => ({
-            month: months[item._id.month - 1],
-            year: item._id.year,
-            revenue: item.revenue,
-            orders: item.orders,
-        }));
+        const data = monthlyRevenue
+            .reverse() // back to oldest → newest for the chart
+            .map((item) => ({
+                month: months[item._id.month - 1],
+                year: item._id.year,
+                revenue: item.revenue,
+                orders: item.orders,
+            }));
 
         sendResponse(res, { statusCode: 200, success: true, message: 'Monthly revenue fetched', data });
     }),

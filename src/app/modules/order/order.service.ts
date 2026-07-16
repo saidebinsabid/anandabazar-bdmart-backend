@@ -12,10 +12,21 @@ import { computeShippingCost } from '../shipping/shipping.service';
 
 const OrderService = {
     async getAllOrders(query: Record<string, unknown>) {
+        // The admin list sends `search` for order-number lookups, but QueryBuilder.search()
+        // reads `searchTerm` — normalise so the admin "search by order number" box works.
+        const normalizedQuery = { ...query };
+        if (normalizedQuery.search && !normalizedQuery.searchTerm) {
+            normalizedQuery.searchTerm = normalizedQuery.search;
+        }
+
         const orderQuery = new QueryBuilder(
             Order.find().populate('user', 'firstName lastName email phone').populate('items.product', 'name thumbnail'),
-            query
-        ).filter().sort().paginate();
+            normalizedQuery
+        )
+            .search(['orderId'])   // enable admin order-list search by human order id (ABM-XXXX)
+            .filter()              // status tabs (?status=shipped, etc.)
+            .sort()
+            .paginate();
 
         const orders = await orderQuery.modelQuery;
         const meta = await orderQuery.countTotal();
@@ -383,6 +394,9 @@ const OrderService = {
         const order = await Order.findById(id);
         if (!order) throw new AppError(404, 'Order not found');
 
+        // Persist the current note so the admin detail page can read it back
+        // (order.adminNote), and keep a timeline trail of every note added.
+        order.adminNote = note;
         order.timeline.push({ status: 'admin_note', note, createdAt: new Date() } as any);
         await order.save();
         return order;

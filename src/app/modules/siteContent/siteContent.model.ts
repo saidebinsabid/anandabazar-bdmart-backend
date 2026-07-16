@@ -60,6 +60,7 @@ const siteContentSchema = new Schema({
         bkash:  { number: { type: String, default: '' }, accountType: { type: String, default: 'Personal' }, active: { type: Boolean, default: true } },
         rocket: { number: { type: String, default: '' }, accountType: { type: String, default: 'Personal' }, active: { type: Boolean, default: true } },
         nagad:  { number: { type: String, default: '' }, accountType: { type: String, default: 'Personal' }, active: { type: Boolean, default: true } },
+        cod:    { active: { type: Boolean, default: true } }, // Cash on Delivery show/hide toggle
         instructions: { type: String, default: 'Send Money to the number above, then submit your number, transaction ID and payment time below.' },
     },
 

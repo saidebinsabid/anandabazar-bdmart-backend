@@ -161,6 +161,7 @@ const SiteContentService = {
                             bkash:  { number: '', accountType: 'Personal', active: true },
                             rocket: { number: '', accountType: 'Personal', active: true },
                             nagad:  { number: '', accountType: 'Personal', active: true },
+                            cod:    { active: true },
                             instructions: 'Send Money to the number above, then submit your number, transaction ID and payment time below.',
                         },
                     },
