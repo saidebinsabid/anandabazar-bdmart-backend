@@ -322,6 +322,22 @@ const ProductService = {
         let created = 0;
         const failed: { index: number; error: string }[] = [];
 
+        // Spreadsheet-friendly: a CSV row may name its category ("Electronics")
+        // instead of pasting an ObjectId. Load the lookup once for the whole batch.
+        const allCategories = await Category.find({ isDeleted: { $ne: true } }).select('_id name');
+        const categoryByName = new Map<string, string>(
+            allCategories.map((c: any) => [String(c.name).trim().toLowerCase(), String(c._id)]),
+        );
+        const categoryIds = new Set<string>(allCategories.map((c: any) => String(c._id)));
+
+        // Returns the ObjectId for an id-or-name value, or null when unknown.
+        const resolveCategory = (value: unknown): string | null => {
+            const raw = String(value ?? '').trim();
+            if (!raw) return null;
+            if (categoryIds.has(raw)) return raw;                    // already an id
+            return categoryByName.get(raw.toLowerCase()) || null;    // by name (case-insensitive)
+        };
+
         for (let index = 0; index < items.length; index++) {
             const parsed = bulkProductRowSchema.safeParse(items[index]);
             if (!parsed.success) {
@@ -334,10 +350,27 @@ const ProductService = {
             try {
                 const payload: any = { ...parsed.data };
 
+                const categoryId = resolveCategory(payload.category);
+                if (!categoryId) {
+                    failed.push({ index, error: `category: no category matches "${payload.category}" (use the exact category name or its id)` });
+                    continue;
+                }
+                payload.category = categoryId;
+
+                // subCategory is optional — but if given it must resolve too.
+                if (payload.subCategory) {
+                    const subId = resolveCategory(payload.subCategory);
+                    if (!subId) {
+                        failed.push({ index, error: `subCategory: no category matches "${payload.subCategory}"` });
+                        continue;
+                    }
+                    payload.subCategory = subId;
+                }
+
                 // Use create() (not insertMany) so pre-save hooks run per row
                 // (slug, sku, discount, variant labels) — same as single create.
                 await Product.create(payload);
-                await Category.findByIdAndUpdate(parsed.data.category, { $inc: { productCount: 1 } });
+                await Category.findByIdAndUpdate(categoryId, { $inc: { productCount: 1 } });
                 created++;
             } catch (err: any) {
                 failed.push({ index, error: err?.message || 'Failed to create product' });
